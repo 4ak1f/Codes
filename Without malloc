@@ -1,0 +1,72 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <omp.h>
+#include <time.h>
+
+// Function to calculate sum sequentially
+long long sequential_sum(int array[], int size) {
+    long long sum = 0;
+    for (int i = 0; i < size; i++) {
+        sum += array[i];
+    }
+    return sum;
+}
+
+// Function to calculate sum in parallel using OpenMP
+long long parallel_sum(int array[], int size, int num_threads) {
+    long long sum = 0;
+
+    #pragma omp parallel for reduction(+:sum) num_threads(num_threads)
+    for (int i = 0; i < size; i++) {
+        sum += array[i];
+    }
+
+    return sum;
+}
+
+// Function to generate an array of random integers
+void generate_random_array(int array[], int size) {
+    for (int i = 0; i < size; i++) {
+        array[i] = rand() % 100; // Random numbers between 0 and 99
+    }
+}
+
+int main() {
+    const int SIZE = 100000000; // Large array size
+    int array[SIZE];
+    generate_random_array(array, SIZE);
+
+    // Variables for measuring execution time
+    double start_time, end_time;
+    long long seq_sum, par_sum;
+
+    // Sequential sum
+    start_time = omp_get_wtime();
+    seq_sum = sequential_sum(array, SIZE);
+    end_time = omp_get_wtime();
+    double sequential_time = end_time - start_time;
+    printf("Sequential Sum: %lld\n", seq_sum);
+    printf("Sequential Execution Time: %f seconds\n", sequential_time);
+
+    // Parallel sum with different thread counts
+    int thread_counts[] = {2, 4, 8};
+    for (int t = 0; t < 3; t++) {
+        int num_threads = thread_counts[t];
+        start_time = omp_get_wtime();
+        par_sum = parallel_sum(array, SIZE, num_threads);
+        end_time = omp_get_wtime();
+        double parallel_time = end_time - start_time;
+
+        // Calculate speedup and efficiency
+        double speedup = sequential_time / parallel_time;
+        double efficiency = speedup / num_threads;
+
+        // Results
+        printf("\nParallel Sum with %d threads: %lld\n", num_threads, par_sum);
+        printf("Parallel Execution Time: %f seconds\n", parallel_time);
+        printf("Speedup: %f\n", speedup);
+        printf("Efficiency: %f\n", efficiency);
+    }
+
+    return 0;
+}
